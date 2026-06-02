@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/auth_providers.dart';
 import '../features/auth/login_screen.dart';
 import '../features/categories/category_list_screen.dart';
+import '../features/notes/note_editor_screen.dart';
+import '../features/notes/note_list_screen.dart';
 import 'responsive_layout.dart';
 import 'design/animations.dart';
-import 'widgets/_preview.dart';
 
 // ── Placeholder screens ───────────────────────────────────────────────────────
 
@@ -69,15 +70,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/notes',
               pageBuilder: (context, state) => pageRouteTransition(
                 key: state.pageKey,
-                child: const DesignPreviewScreen(), // replaced Phase 7
+                child: const NoteListScreen(),
               ),
               routes: [
                 GoRoute(
                   path: ':id/edit',
                   pageBuilder: (context, state) => pageRouteTransition(
                     key: state.pageKey,
-                    child: _Placeholder(
-                        'Note Editor — ${state.pathParameters['id']}'),
+                    child: NoteEditorScreen(
+                        noteId: state.pathParameters['id']!),
                   ),
                 ),
               ],
