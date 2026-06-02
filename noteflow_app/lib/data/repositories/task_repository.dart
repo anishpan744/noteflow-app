@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/auth_providers.dart';
 import '../../models/enums.dart';
 import '../../models/task.dart';
 import '../local/app_database.dart';
@@ -85,4 +86,6 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   );
 });
 
-final _uidProvider = Provider<String>((_) => 'preview-user');
+final _uidProvider = Provider<String>(
+  (ref) => ref.watch(currentUserIdProvider) ?? '',
+);

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/auth_providers.dart';
 import '../../models/note.dart';
 import '../local/app_database.dart';
 import '../local/notes_dao.dart';
@@ -84,4 +85,6 @@ final noteRepositoryProvider = Provider<NoteRepository>((ref) {
   );
 });
 
-final _uidProvider = Provider<String>((_) => 'preview-user');
+final _uidProvider = Provider<String>(
+  (ref) => ref.watch(currentUserIdProvider) ?? '',
+);

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/auth_providers.dart';
 import '../../models/category.dart';
 import '../local/app_database.dart';
 import '../local/categories_dao.dart';
@@ -77,5 +78,6 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   );
 });
 
-// Stub — replaced by real authStateProvider in Phase 5
-final _uidProvider = Provider<String>((_) => 'preview-user');
+final _uidProvider = Provider<String>(
+  (ref) => ref.watch(currentUserIdProvider) ?? '',
+);

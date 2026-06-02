@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -66,4 +63,15 @@ class DefaultFirebaseOptions {
     storageBucket: 'noteflow-taskcanvas.firebasestorage.app',
     measurementId: 'G-C4F8QJLQBT',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDIO7cA9TopIHNty88kTUXNk7NOlfW2D7k',
+    appId: '1:538779872183:web:f40c512d765625b54f1632',
+    messagingSenderId: '538779872183',
+    projectId: 'noteflow-taskcanvas',
+    authDomain: 'noteflow-taskcanvas.firebaseapp.com',
+    storageBucket: 'noteflow-taskcanvas.firebasestorage.app',
+    measurementId: 'G-C4F8QJLQBT',
+  );
+
 }

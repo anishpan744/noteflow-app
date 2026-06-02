@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/auth_providers.dart';
 import '../local/app_database.dart';
 import '../remote/firestore_categories_datasource.dart';
 import '../remote/firestore_notes_datasource.dart';
@@ -100,8 +101,7 @@ class SyncService {
 
 final syncServiceProvider = Provider<SyncService>((ref) {
   final db  = ref.watch(appDatabaseProvider);
-  // uid stub — replaced in Phase 5 with real auth
-  const uid = 'preview-user';
+    final uid = ref.read(currentUserIdProvider) ?? '';
   final service = SyncService(db: db, uid: uid);
   ref.onDispose(service.dispose);
   return service;

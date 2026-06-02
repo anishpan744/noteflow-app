@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/auth_providers.dart';
+import '../features/auth/login_screen.dart';
 import 'responsive_layout.dart';
 import 'design/animations.dart';
 import 'widgets/_preview.dart';
@@ -43,7 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/login',
         pageBuilder: (context, state) => pageRouteTransition(
           key: state.pageKey,
-          child: const _Placeholder('Login — Phase 5'),
+          child: const LoginScreen(),
         ),
       ),
 
