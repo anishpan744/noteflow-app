@@ -1,1 +1,26 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"noteflow-taskcanvas","appId":"1:538779872183:android:e0986914f14428244f1632","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"noteflow-taskcanvas","configurations":{"android":"1:538779872183:android:e0986914f14428244f1632","windows":"1:538779872183:web:f40c512d765625b54f1632"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "noteflow-taskcanvas",
+          "appId": "1:538779872183:android:e0986914f14428244f1632",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "noteflow-taskcanvas",
+          "configurations": {
+            "android": "1:538779872183:android:e0986914f14428244f1632",
+            "windows": "1:538779872183:web:f40c512d765625b54f1632"
+          }
+        }
+      }
+    }
+  }
+}
