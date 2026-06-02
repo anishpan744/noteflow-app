@@ -1,0 +1,15 @@
+# Sensitive Firebase config — use CI secrets instead
+noteflow_app/android/app/google-services.json
+noteflow_app/ios/GoogleService-Info.plist
+
+# Windows VS build output
+noteflow_app/build/
+noteflow_app/windows/x64/
+
+# Dart/Flutter tool caches
+noteflow_app/.dart_tool/
+noteflow_app/.flutter-plugins
+noteflow_app/.flutter-plugins-dependencies
+
+# Pub cache (global tools kept in D:\__Anish\Programs\pub-cache)
+.pub-cache/
