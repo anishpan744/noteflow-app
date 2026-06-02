@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/auth_providers.dart';
 import '../features/auth/login_screen.dart';
+import '../features/categories/category_list_screen.dart';
 import 'responsive_layout.dart';
 import 'design/animations.dart';
 import 'widgets/_preview.dart';
@@ -110,7 +111,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/categories',
               pageBuilder: (context, state) => pageRouteTransition(
                 key: state.pageKey,
-                child: const _Placeholder('Categories — Phase 6'),
+                child: const CategoryListScreen(),
               ),
             ),
           ]),
