@@ -6,6 +6,8 @@ import '../features/auth/login_screen.dart';
 import '../features/categories/category_list_screen.dart';
 import '../features/notes/note_editor_screen.dart';
 import '../features/notes/note_list_screen.dart';
+import '../features/tasks/calendar_screen.dart';
+import '../features/tasks/task_editor_screen.dart';
 import 'responsive_layout.dart';
 import 'design/animations.dart';
 
@@ -91,15 +93,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/tasks',
               pageBuilder: (context, state) => pageRouteTransition(
                 key: state.pageKey,
-                child: const _Placeholder('Tasks — Phase 8'),
+                child: const CalendarScreen(),
               ),
               routes: [
                 GoRoute(
                   path: ':id/edit',
                   pageBuilder: (context, state) => pageRouteTransition(
                     key: state.pageKey,
-                    child: _Placeholder(
-                        'Task Editor — ${state.pathParameters['id']}'),
+                    child: TaskEditorScreen(
+                        taskId: state.pathParameters['id']!),
                   ),
                 ),
               ],

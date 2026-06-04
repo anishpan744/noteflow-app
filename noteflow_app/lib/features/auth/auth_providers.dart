@@ -2,6 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+// ── DEV ONLY ──────────────────────────────────────────────────────────────────
+// Temporary auth bypass for emulator visual verification (emulator Google OAuth
+// WebView won't accept keyboard input). MUST be false for any commit / release.
+const bool kDevBypassAuth = false;
+const String _kDevUid = 'dev-preview-user';
+
 // ── Auth state stream ─────────────────────────────────────────────────────────
 
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -11,6 +17,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
 /// Synchronous UID — used by router redirect and repository providers.
 /// Returns null when signed out.
 final currentUserIdProvider = Provider<String?>((ref) {
+  if (kDevBypassAuth) return _kDevUid;
   return ref.watch(authStateProvider).valueOrNull?.uid;
 });
 
