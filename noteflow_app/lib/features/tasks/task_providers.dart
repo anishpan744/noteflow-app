@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../../core/notification_service.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../models/enums.dart';
 import '../../models/sub_task.dart';
@@ -62,16 +63,25 @@ class TaskController extends AsyncNotifier<void> {
       createdAt:   now,
       updatedAt:   now,
     );
-    state = await AsyncValue.guard(() => _repo.save(task));
+    state = await AsyncValue.guard(() async {
+      await _repo.save(task);
+      await NotificationService.instance.scheduleTaskReminder(task);
+    });
   }
 
   Future<void> save(Task task) async {
-    state = await AsyncValue.guard(
-        () => _repo.save(task.copyWith(updatedAt: DateTime.now())));
+    final updated = task.copyWith(updatedAt: DateTime.now());
+    state = await AsyncValue.guard(() async {
+      await _repo.save(updated);
+      await NotificationService.instance.scheduleTaskReminder(updated);
+    });
   }
 
   Future<void> delete(String id) async {
-    state = await AsyncValue.guard(() => _repo.delete(id));
+    state = await AsyncValue.guard(() async {
+      await _repo.delete(id);
+      await NotificationService.instance.cancelTaskReminder(id);
+    });
   }
 
   Future<void> updateStatus(String id, TaskStatus status) async {
