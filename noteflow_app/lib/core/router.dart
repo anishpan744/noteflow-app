@@ -6,27 +6,12 @@ import '../features/auth/login_screen.dart';
 import '../features/categories/category_list_screen.dart';
 import '../features/notes/note_editor_screen.dart';
 import '../features/notes/note_list_screen.dart';
+import '../features/search/search_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/tasks/calendar_screen.dart';
 import '../features/tasks/task_editor_screen.dart';
 import 'responsive_layout.dart';
 import 'design/animations.dart';
-
-// ── Placeholder screens ───────────────────────────────────────────────────────
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text(title, style: Theme.of(context).textTheme.headlineMedium),
-      ),
-    );
-  }
-}
 
 // ── Router provider ───────────────────────────────────────────────────────────
 
@@ -58,7 +43,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/search',
         pageBuilder: (context, state) => pageRouteTransition(
           key: state.pageKey,
-          child: const _Placeholder('Search — Phase 12'),
+          child: const SearchScreen(),
         ),
       ),
 

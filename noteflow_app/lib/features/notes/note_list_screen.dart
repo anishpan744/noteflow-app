@@ -116,10 +116,10 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                           .state = !isGrid,
                     ),
                     const SizedBox(width: 4),
-                    // Search icon
+                    // Search icon → unified full-screen search
                     _IconBtn(
                       icon: PhosphorIconsRegular.magnifyingGlass,
-                      onTap: () => setState(() => _searchExpanded = true),
+                      onTap: () => context.push('/search'),
                     ),
                   ],
                 ],
