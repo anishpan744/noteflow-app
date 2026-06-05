@@ -1,0 +1,12 @@
+# Copy this file to android/key.properties and fill in real values to sign
+# release builds. DO NOT commit the filled-in key.properties or the keystore.
+#
+# Generate a keystore with:
+#   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA \
+#           -keysize 2048 -validity 10000 -alias upload
+#
+storePassword=your-keystore-password
+keyPassword=your-key-password
+keyAlias=upload
+# Path to the .jks file (absolute, or relative to the android/app directory):
+storeFile=/path/to/upload-keystore.jks
