@@ -6,6 +6,7 @@ import '../features/auth/login_screen.dart';
 import '../features/categories/category_list_screen.dart';
 import '../features/notes/note_editor_screen.dart';
 import '../features/notes/note_list_screen.dart';
+import '../features/settings/settings_screen.dart';
 import '../features/tasks/calendar_screen.dart';
 import '../features/tasks/task_editor_screen.dart';
 import 'responsive_layout.dart';
@@ -125,7 +126,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/settings',
               pageBuilder: (context, state) => pageRouteTransition(
                 key: state.pageKey,
-                child: const _Placeholder('Settings — Phase 11'),
+                child: const SettingsScreen(),
               ),
             ),
           ]),

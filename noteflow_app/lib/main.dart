@@ -8,6 +8,7 @@ import 'core/fcm_service.dart';
 import 'core/notification_service.dart';
 import 'core/router.dart';
 import 'features/auth/auth_providers.dart';
+import 'features/settings/settings_providers.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -31,6 +32,7 @@ class NoteFlowApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router    = ref.watch(routerProvider);
     final themeMode = ref.watch(themeProvider);
+    final textScale = ref.watch(textSizeProvider).scale;
 
     // Save the FCM token whenever a user is signed in.
     ref.listen(currentUserIdProvider, (prev, uid) {
@@ -47,6 +49,13 @@ class NoteFlowApp extends ConsumerWidget {
       darkTheme: darkTheme,
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) {
+        return MediaQuery.withClampedTextScaling(
+          minScaleFactor: textScale,
+          maxScaleFactor: textScale,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }
