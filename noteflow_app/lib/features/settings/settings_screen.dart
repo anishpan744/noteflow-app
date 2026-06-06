@@ -227,24 +227,34 @@ class _NotificationsSectionState
     _loadSettings();
   }
 
+  String? get _uid =>
+      FirebaseAuth.instance.currentUser?.uid ??
+      ref.read(currentUserIdProvider);
+
   Future<void> _loadSettings() async {
-    final uid = ref.read(currentUserIdProvider);
+    final uid = _uid;
     if (uid == null) {
-      setState(() => _loaded = true);
+      if (mounted) setState(() => _loaded = true);
       return;
     }
-    final doc =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
-    final settings = (doc.data()?['settings'] ?? {}) as Map<String, dynamic>;
-    setState(() {
-      _morningDigest = settings['morningDigest'] == true;
-      _overdueNudge = settings['overdueNudge'] == true;
-      _loaded = true;
-    });
+    try {
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final settings = (doc.data()?['settings'] ?? {}) as Map<String, dynamic>;
+      if (!mounted) return;
+      setState(() {
+        _morningDigest = settings['morningDigest'] == true;
+        _overdueNudge = settings['overdueNudge'] == true;
+        _loaded = true;
+      });
+    } catch (_) {
+      // Never leave the toggles permanently disabled on a read failure.
+      if (mounted) setState(() => _loaded = true);
+    }
   }
 
   Future<void> _save(String key, bool value) async {
-    final uid = ref.read(currentUserIdProvider);
+    final uid = _uid;
     if (uid == null) return;
     await FirebaseFirestore.instance.collection('users').doc(uid).set({
       'settings': {key: value},
