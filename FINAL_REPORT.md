@@ -74,6 +74,10 @@ channel, and release-APK install.
   full theming.
 - **Dev auth bypass** — `kDevBypassAuth` in `auth_providers.dart` exists for
   on-emulator verification without Google Sign-In. It is committed as `false`.
+- **Security review applied** — `scrapeOpenGraph` is now auth-gated and
+  SSRF-hardened (private-IP/redirect/content-type/size guards); `ogCache` is
+  client-unreadable; `sendOverdueNudge` honours the `overdueNudge` opt-out.
+  Outstanding: enable App Check (item 1) and refresh the `uuid` transitive dep.
 - **Web** is not a target — Drift's native SQLite (FFI) doesn't compile for web;
   web support was added only for early previews.
 - **Voice-to-text, Drive picker, PDF export, home-screen widget, app-lock
@@ -123,6 +127,13 @@ Enabling Blaze for the functions typically costs **~$0/month** at this scale
 
 1. **Enable Blaze + deploy functions** → `firebase deploy --only functions`;
    unlocks OG previews, recurring generation, digests/nudges.
+   - Before exposing the scraper publicly, **enable App Check**: add
+     `firebase_app_check` to `main.dart` (Play Integrity on Android), register the
+     provider in the Firebase console, then flip `enforceAppCheck: true` on
+     `scrapeOpenGraph` (a `NOTE` marks the spot in `functions/src/index.ts`).
+   - **Resolve transitive `uuid` advisories** by bumping `firebase-admin` /
+     `firebase-functions` to a clean fixed path — do **not** `npm audit fix
+     --force` (it downgrades `firebase-admin` to a breaking 10.x).
 2. **Fix Windows Firebase build** (pin/patch `firebase_auth` Windows, or
    conditionally exclude on Windows) → then do **Phase 13** (3-pane + Ctrl+N/F/S
    shortcuts) and the Windows release.

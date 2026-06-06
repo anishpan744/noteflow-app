@@ -3,6 +3,8 @@
  * Implements the 5 functions specified in CLAUDE.md §7 (Firebase Functions v2).
  */
 import {createHash} from "crypto";
+import {lookup} from "dns/promises";
+import {isIP} from "net";
 import * as cheerio from "cheerio";
 import {initializeApp} from "firebase-admin/app";
 import {
@@ -180,9 +182,155 @@ interface OgResult {
   favicon: string | null;
 }
 
+// SSRF guard configuration.
+const MAX_REDIRECTS = 3;
+const MAX_HTML_BYTES = 2 * 1024 * 1024; // 2 MB
+
+function ipv4ToInt(ip: string): number {
+  return ip.split(".").reduce((acc, o) => (acc << 8) + parseInt(o, 10), 0) >>> 0;
+}
+
+/** True for loopback, private, link-local, CGNAT, reserved and multicast IPv4. */
+function isPrivateIPv4(ip: string): boolean {
+  const n = ipv4ToInt(ip);
+  const inRange = (base: string, bits: number): boolean => {
+    const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
+    return (n & mask) === (ipv4ToInt(base) & mask);
+  };
+  return (
+    inRange("0.0.0.0", 8) ||
+    inRange("10.0.0.0", 8) ||
+    inRange("100.64.0.0", 10) || // CGNAT
+    inRange("127.0.0.0", 8) ||
+    inRange("169.254.0.0", 16) || // link-local incl. 169.254.169.254 metadata
+    inRange("172.16.0.0", 12) ||
+    inRange("192.0.0.0", 24) ||
+    inRange("192.168.0.0", 16) ||
+    inRange("198.18.0.0", 15) ||
+    inRange("224.0.0.0", 4) || // multicast
+    inRange("240.0.0.0", 4) // reserved
+  );
+}
+
+function isPrivateIPv6(ip: string): boolean {
+  const addr = ip.toLowerCase();
+  if (addr === "::1" || addr === "::") return true;
+  if (addr.startsWith("fc") || addr.startsWith("fd")) return true; // unique-local
+  if (/^fe[89ab]/.test(addr)) return true; // link-local fe80::/10
+  const mapped = addr.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapped) return isPrivateIPv4(mapped[1]);
+  return false;
+}
+
+function isPrivateIP(ip: string): boolean {
+  const v = isIP(ip);
+  if (v === 4) return isPrivateIPv4(ip);
+  if (v === 6) return isPrivateIPv6(ip);
+  return true; // unknown form → treat as unsafe
+}
+
+/** Validate protocol + reject hosts that resolve to private/internal IPs. */
+async function assertPublicUrl(raw: string): Promise<URL> {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    throw new HttpsError("invalid-argument", "Malformed URL.");
+  }
+  if (u.protocol !== "http:" && u.protocol !== "https:") {
+    throw new HttpsError("invalid-argument", "Only http(s) URLs are allowed.");
+  }
+  const host = u.hostname;
+  if (isIP(host)) {
+    if (isPrivateIP(host)) {
+      throw new HttpsError("permission-denied", "URL targets a private address.");
+    }
+    return u;
+  }
+  if (/^(localhost|.*\.local|.*\.internal)$/i.test(host)) {
+    throw new HttpsError("permission-denied", "URL host is not allowed.");
+  }
+  const records = await lookup(host, {all: true});
+  if (records.length === 0) {
+    throw new HttpsError("unavailable", "Could not resolve host.");
+  }
+  for (const r of records) {
+    if (isPrivateIP(r.address)) {
+      throw new HttpsError("permission-denied", "URL resolves to a private address.");
+    }
+  }
+  return u;
+}
+
+/** Read a response body, aborting if it exceeds the byte cap. */
+async function readCapped(res: Response, maxBytes: number): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    if (value) {
+      total += value.length;
+      if (total > maxBytes) {
+        await reader.cancel();
+        throw new HttpsError("invalid-argument", "Response too large.");
+      }
+      chunks.push(value);
+    }
+  }
+  return Buffer.concat(chunks).toString("utf-8");
+}
+
+/** Fetch HTML with manual redirect following, re-validating every hop. */
+async function safeFetchHtml(startUrl: string): Promise<string> {
+  let current = await assertPublicUrl(startUrl);
+  for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    const res = await fetch(current, {
+      headers: {"User-Agent": "NoteFlowBot/1.0 (+https://noteflow.app)"},
+      redirect: "manual",
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      if (!loc) throw new HttpsError("unavailable", "Redirect without location.");
+      if (i === MAX_REDIRECTS) {
+        throw new HttpsError("unavailable", "Too many redirects.");
+      }
+      current = await assertPublicUrl(new URL(loc, current).toString());
+      continue;
+    }
+
+    if (!res.ok) {
+      throw new HttpsError("unavailable", `Fetch failed: ${res.status}`);
+    }
+
+    const ctype = res.headers.get("content-type") ?? "";
+    if (!/text\/html|application\/xhtml\+xml/i.test(ctype)) {
+      throw new HttpsError("invalid-argument", "URL is not an HTML page.");
+    }
+
+    const lenHeader = res.headers.get("content-length");
+    if (lenHeader && Number(lenHeader) > MAX_HTML_BYTES) {
+      throw new HttpsError("invalid-argument", "Response too large.");
+    }
+
+    return readCapped(res, MAX_HTML_BYTES);
+  }
+  throw new HttpsError("unavailable", "Too many redirects.");
+}
+
+// NOTE: enforceAppCheck should be set to true here once the Flutter client
+// initialises firebase_app_check and sends App Check tokens; enabling it before
+// that would reject every call. Tracked as a follow-up.
 export const scrapeOpenGraph = onCall(
   {cors: true, timeoutSeconds: 30},
   async (request): Promise<OgResult> => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
     const url = (request.data?.url as string | undefined)?.trim();
     if (!url || !/^https?:\/\//i.test(url)) {
       throw new HttpsError("invalid-argument", "A valid http(s) url is required.");
@@ -209,15 +357,9 @@ export const scrapeOpenGraph = onCall(
 
     let html: string;
     try {
-      const res = await fetch(url, {
-        headers: {"User-Agent": "NoteFlowBot/1.0 (+https://noteflow.app)"},
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!res.ok) {
-        throw new HttpsError("unavailable", `Fetch failed: ${res.status}`);
-      }
-      html = await res.text();
+      html = await safeFetchHtml(url);
     } catch (e) {
+      if (e instanceof HttpsError) throw e;
       logger.warn(`scrapeOpenGraph fetch error for ${url}:`, e);
       throw new HttpsError("unavailable", "Could not fetch the URL.");
     }
@@ -320,6 +462,9 @@ export const sendOverdueNudge = onSchedule(
     let nudged = 0;
 
     for (const userDoc of usersSnap.docs) {
+      const settings = (userDoc.data().settings ?? {}) as Record<string, unknown>;
+      if (settings.overdueNudge !== true) continue; // respect opt-out (default off)
+
       const uid = userDoc.id;
       const overdueSnap = await db
         .collection("users").doc(uid).collection("tasks")

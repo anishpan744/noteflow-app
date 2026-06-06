@@ -2,10 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // OG link preview cache — readable by any authenticated user, not writable from client
+    // OG link preview cache — internal only. Served exclusively through the
+    // scrapeOpenGraph callable (Admin SDK bypasses rules). Clients must not be
+    // able to read/list it, since docs hold raw URLs other users have pasted.
     match /ogCache/{docId} {
-      allow read: if request.auth != null;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     // All user data — strictly scoped to the owning user
